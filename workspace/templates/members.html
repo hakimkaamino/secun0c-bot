@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Members - Discord Bot Dashboard</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+    <div class="dashboard-wrapper">
+        <aside class="sidebar">
+            <div class="sidebar-header">
+                <h2>🤖 Bot Panel</h2>
+            </div>
+            <nav class="sidebar-nav">
+                <a href="{{ url_for('index') }}" class="nav-item">
+                    <span class="icon">📊</span>
+                    <span>Dashboard</span>
+                </a>
+                <a href="{{ url_for('send_message_page') }}" class="nav-item">
+                    <span class="icon">💬</span>
+                    <span>Send Message</span>
+                </a>
+                <a href="{{ url_for('bot_management_page') }}" class="nav-item">
+                    <span class="icon">🤖</span>
+                    <span>Bot Management</span>
+                </a>
+                <a href="{{ url_for('violations_page') }}" class="nav-item">
+                    <span class="icon">⚠️</span>
+                    <span>Violations</span>
+                </a>
+                <a href="{{ url_for('config_page') }}" class="nav-item">
+                    <span class="icon">⚙️</span>
+                    <span>Configuration</span>
+                </a>
+                <a href="{{ url_for('members_page') }}" class="nav-item active">
+                    <span class="icon">👥</span>
+                    <span>Members</span>
+                </a>
+                <a href="{{ url_for('logs_page') }}" class="nav-item">
+                    <span class="icon">📝</span>
+                    <span>Logs</span>
+                </a>
+                <a href="{{ url_for('logout') }}" class="nav-item logout">
+                    <span class="icon">🚪</span>
+                    <span>Logout</span>
+                </a>
+            </nav>
+        </aside>
+
+        <main class="main-content">
+            <header class="top-bar">
+                <h1>Server Members</h1>
+                <div class="search-box">
+                    <input type="text" id="search-members" placeholder="Search members..." onkeyup="searchMembers()">
+                </div>
+            </header>
+
+            <div class="section">
+                <div class="members-table-container">
+                    <table class="members-table">
+                        <thead>
+                            <tr>
+                                <th>Avatar</th>
+                                <th>Username</th>
+                                <th>User ID</th>
+                                <th>Joined</th>
+                                <th>Roles</th>
+                            </tr>
+                        </thead>
+                        <tbody id="members-list">
+                            <tr>
+                                <td colspan="5" class="loading">Loading members...</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script src="{{ url_for('static', filename='js/members.js') }}"></script>
+</body>
+</html>

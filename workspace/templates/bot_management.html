@@ -1,0 +1,286 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bot Management - Discord Bot Dashboard</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+    <div class="dashboard-wrapper">
+        <aside class="sidebar">
+            <div class="sidebar-header">
+                <h2>🤖 Bot Panel</h2>
+            </div>
+            <nav class="sidebar-nav">
+                <a href="{{ url_for('index') }}" class="nav-item">
+                    <span class="icon">📊</span>
+                    <span>Dashboard</span>
+                </a>
+                <a href="{{ url_for('send_message_page') }}" class="nav-item">
+                    <span class="icon">💬</span>
+                    <span>Send Message</span>
+                </a>
+                <a href="{{ url_for('bot_management_page') }}" class="nav-item active">
+                    <span class="icon">🤖</span>
+                    <span>Bot Management</span>
+                </a>
+                <a href="{{ url_for('violations_page') }}" class="nav-item">
+                    <span class="icon">⚠️</span>
+                    <span>Violations</span>
+                </a>
+                <a href="{{ url_for('config_page') }}" class="nav-item">
+                    <span class="icon">⚙️</span>
+                    <span>Configuration</span>
+                </a>
+                <a href="{{ url_for('members_page') }}" class="nav-item">
+                    <span class="icon">👥</span>
+                    <span>Members</span>
+                </a>
+                <a href="{{ url_for('logs_page') }}" class="nav-item">
+                    <span class="icon">📝</span>
+                    <span>Logs</span>
+                </a>
+                <a href="{{ url_for('logout') }}" class="nav-item logout">
+                    <span class="icon">🚪</span>
+                    <span>Logout</span>
+                </a>
+            </nav>
+        </aside>
+
+        <main class="main-content">
+            <header class="top-bar">
+                <h1>🤖 Bot Management & Monitoring</h1>
+                <select id="guild-select" class="form-control" style="margin-left:auto;max-width:280px;">
+                    <option>Loading guilds...</option>
+                </select>
+                <button class="btn btn-secondary" onclick="loadBots()">🔄 Refresh</button>
+            </header>
+
+            <div id="notification" class="notification" style="display: none;"></div>
+
+            <div class="section">
+                <h2>Bot Security Status</h2>
+                <div class="info-card">
+                    <div class="info-row">
+                        <span class="label">Auto-Quarantine:</span>
+                        <span class="value">✅ ENABLED</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="label">Bot Monitoring:</span>
+                        <span class="value">✅ ACTIVE</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="label">Total Bots:</span>
+                        <span class="value" id="total-bots">0</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="label">Whitelisted Bots:</span>
+                        <span class="value" id="whitelisted-count">0</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="section">
+                <h2>All Bots in Server</h2>
+                <div class="search-box">
+                    <input type="text" id="search-bots" placeholder="Search bots..." onkeyup="searchBots()">
+                </div>
+                <div class="bots-grid" id="bots-container">
+                    <p class="loading">Loading bots...</p>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script>
+        let allBots = [];
+
+        document.addEventListener('DOMContentLoaded', function() {
+            loadBots();
+        });
+
+        function loadBots() {
+            const gid = localStorage.getItem('selectedGuildId');
+            const url = gid ? `/api/bots?guild_id=${gid}` : '/api/bots';
+            fetch(url)
+                .then(response => response.json())
+                .then(data => {
+                    allBots = data;
+                    displayBots(data);
+                    updateStats(data);
+                })
+                .catch(error => {
+                    console.error('Error loading bots:', error);
+                    document.getElementById('bots-container').innerHTML = 
+                        '<p class="loading">Failed to load bots</p>';
+                });
+        }
+
+        function displayBots(bots) {
+            const container = document.getElementById('bots-container');
+            
+            if (bots.length === 0) {
+                container.innerHTML = '<p class="loading">No bots found in server</p>';
+                return;
+            }
+            
+            container.innerHTML = bots.map(bot => `
+                <div class="bot-card ${bot.whitelisted ? 'whitelisted' : 'quarantined'}">
+                    <div class="bot-header">
+                        <img src="${bot.avatar}" alt="${bot.name}" class="bot-avatar">
+                        <div class="bot-info">
+                            <h3>${bot.name}</h3>
+                            <p class="bot-id">ID: ${bot.id}</p>
+                            <p class="bot-joined">Joined: ${bot.joined_at}</p>
+                        </div>
+                    </div>
+                <div class="bot-status">
+                        <span class="badge ${bot.whitelisted ? 'badge-success' : 'badge-danger'}">
+                            ${bot.whitelisted ? '✅ Whitelisted' : '⚠️ Quarantined'}
+                        </span>
+                        <span class="badge badge-info">
+                            Actions: ${bot.action_count}
+                        </span>
+                    </div>
+                    <div class="bot-actions">
+                        ${bot.whitelisted ? 
+                            `<button class="btn btn-warning btn-sm" onclick="revokeBot('${bot.id}', '${bot.name}')">
+                                🔴 Revoke
+                            </button>` :
+                            `<button class="btn btn-success btn-sm" onclick="approveBot('${bot.id}', '${bot.name}')">
+                                ✅ Approve
+                            </button>`
+                        }
+                        <button class="btn btn-danger btn-sm" onclick="kickBot('${bot.id}', '${bot.name}')">🦵 Kick</button>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function updateStats(bots) {
+            document.getElementById('total-bots').textContent = bots.length;
+            const whitelisted = bots.filter(b => b.whitelisted).length;
+            document.getElementById('whitelisted-count').textContent = whitelisted;
+        }
+
+        function searchBots() {
+            const searchTerm = document.getElementById('search-bots').value.toLowerCase();
+            
+            if (searchTerm === '') {
+                displayBots(allBots);
+                return;
+            }
+            
+            const filtered = allBots.filter(bot => 
+                bot.name.toLowerCase().includes(searchTerm) ||
+                bot.id.includes(searchTerm)
+            );
+            
+            displayBots(filtered);
+        }
+
+        function approveBot(botId, botName) {
+            if (!confirm(`Approve bot "${botName}"?\n\nThis will whitelist the bot and remove restrictions.`)) {
+                return;
+            }
+
+            const gid = localStorage.getItem('selectedGuildId');
+            fetch('/api/approve_bot', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({ bot_id: botId, guild_id: gid })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    showNotification(data.message, 'success');
+                    loadBots();
+                } else {
+                    showNotification('Error: ' + data.message, 'error');
+                }
+            })
+            .catch(error => {
+                showNotification('Failed to approve bot', 'error');
+            });
+        }
+
+        function revokeBot(botId, botName) {
+            if (!confirm(`Revoke bot "${botName}"?\n\nThis will quarantine the bot and restrict its actions.`)) {
+                return;
+            }
+
+            const gid = localStorage.getItem('selectedGuildId');
+            fetch('/api/revoke_bot', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({ bot_id: botId, guild_id: gid })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    showNotification(data.message, 'success');
+                    loadBots();
+                } else {
+                    showNotification('Error: ' + data.message, 'error');
+                }
+            })
+            .catch(error => {
+                showNotification('Failed to revoke bot', 'error');
+            });
+        }
+
+        function kickBot(botId, botName) {
+            if (!confirm(`Kick bot "${botName}"?`)) return;
+            const gid = localStorage.getItem('selectedGuildId');
+            fetch('/api/kick_bot', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({ bot_id: botId, guild_id: gid })
+            })
+            .then(r => r.json())
+            .then(d => {
+                if (d.success) {
+                    showNotification('Bot kicked', 'success');
+                    loadBots();
+                } else {
+                    showNotification('Error: ' + d.message, 'error');
+                }
+            })
+            .catch(() => showNotification('Failed to kick bot', 'error'));
+        }
+
+        // Populate guild selector
+        document.addEventListener('DOMContentLoaded', function() {
+            const sel = document.getElementById('guild-select');
+            fetch('/api/guilds').then(r => r.json()).then(gs => {
+                const saved = localStorage.getItem('selectedGuildId');
+                sel.innerHTML = '<option value="">All Servers</option>';
+                gs.forEach(g => {
+                    const opt = document.createElement('option');
+                    opt.value = g.id;
+                    opt.textContent = `${g.name} (${g.member_count})`;
+                    if (saved && saved === g.id) opt.selected = true;
+                    sel.appendChild(opt);
+                });
+                sel.addEventListener('change', () => {
+                    const val = sel.value || '';
+                    if (val) localStorage.setItem('selectedGuildId', val); else localStorage.removeItem('selectedGuildId');
+                    loadBots();
+                });
+            }).catch(() => {});
+        });
+
+        function showNotification(message, type) {
+            const notification = document.getElementById('notification');
+            notification.textContent = message;
+            notification.className = `notification ${type}`;
+            notification.style.display = 'block';
+            
+            setTimeout(() => {
+                notification.style.display = 'none';
+            }, 3000);
+        }
+    </script>
+</body>
+</html>

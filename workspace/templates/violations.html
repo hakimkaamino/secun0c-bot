@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Violations - Discord Bot Dashboard</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+    <div class="dashboard-wrapper">
+        <aside class="sidebar">
+            <div class="sidebar-header">
+                <h2>🤖 Bot Panel</h2>
+            </div>
+            <nav class="sidebar-nav">
+                <a href="{{ url_for('index') }}" class="nav-item">
+                    <span class="icon">📊</span>
+                    <span>Dashboard</span>
+                </a>
+                <a href="{{ url_for('send_message_page') }}" class="nav-item">
+                    <span class="icon">💬</span>
+                    <span>Send Message</span>
+                </a>
+                <a href="{{ url_for('bot_management_page') }}" class="nav-item">
+                    <span class="icon">🤖</span>
+                    <span>Bot Management</span>
+                </a>
+                <a href="{{ url_for('violations_page') }}" class="nav-item active">
+                    <span class="icon">⚠️</span>
+                    <span>Violations</span>
+                </a>
+                <a href="{{ url_for('config_page') }}" class="nav-item">
+                    <span class="icon">⚙️</span>
+                    <span>Configuration</span>
+                </a>
+                <a href="{{ url_for('members_page') }}" class="nav-item">
+                    <span class="icon">👥</span>
+                    <span>Members</span>
+                </a>
+                <a href="{{ url_for('logs_page') }}" class="nav-item">
+                    <span class="icon">📝</span>
+                    <span>Logs</span>
+                </a>
+                <a href="{{ url_for('logout') }}" class="nav-item logout">
+                    <span class="icon">🚪</span>
+                    <span>Logout</span>
+                </a>
+            </nav>
+        </aside>
+
+        <main class="main-content">
+            <header class="top-bar">
+                <h1>⚠️ User Violations Tracker</h1>
+                <button class="btn btn-secondary" onclick="loadViolations()">🔄 Refresh</button>
+            </header>
+
+            <div id="notification" class="notification" style="display: none;"></div>
+
+            <div class="section">
+                <h2>Violation System</h2>
+                <div class="info-card">
+                    <div class="info-row">
+                        <span class="label">3-Strike System:</span>
+                        <span class="value">✅ ACTIVE</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="label">Auto-Ban on 3 Violations:</span>
+                        <span class="value">✅ ENABLED</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="label">Total Violators:</span>
+                        <span class="value" id="total-violators">0</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="section">
+                <h2>Top Violators</h2>
+                <div class="violations-container" id="violations-container">
+                    <p class="loading">Loading violations...</p>
+                </div>
+            </div>
+
+            <div class="section">
+                <h2>Violation Types Tracked</h2>
+                <div class="violations-info">
+                    <div class="violation-type">
+                        <span class="icon">🚫</span>
+                        <span>Bad Word Filter</span>
+                    </div>
+                    <div class="violation-type">
+                        <span class="icon">📢</span>
+                        <span>Mass Ping/Mention</span>
+                    </div>
+                    <div class="violation-type">
+                        <span class="icon">💬</span>
+                        <span>Spam Detection</span>
+                    </div>
+                    <div class="violation-type">
+                        <span class="icon">👤</span>
+                        <span>Nickname Spam</span>
+                    </div>
+                    <div class="violation-type">
+                        <span class="icon">🖼️</span>
+                        <span>Avatar Spam</span>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            loadViolations();
+        });
+
+        function loadViolations() {
+            fetch('/api/violations')
+                .then(response => response.json())
+                .then(data => {
+                    displayViolations(data);
+                    document.getElementById('total-violators').textContent = data.length;
+                })
+                .catch(error => {
+                    console.error('Error loading violations:', error);
+                    document.getElementById('violations-container').innerHTML = 
+                        '<p class="loading">Failed to load violations</p>';
+                });
+        }
+
+        function displayViolations(violations) {
+            const container = document.getElementById('violations-container');
+            
+            if (violations.length === 0) {
+                container.innerHTML = '<p class="loading">✅ No violations recorded! Server is clean.</p>';
+                return;
+            }
+            
+            container.innerHTML = violations.map(v => {
+                const percentage = (v.violations / 3) * 100;
+                const statusClass = v.violations === 3 ? 'critical' : v.violations === 2 ? 'warning' : 'normal';
+                
+                return `
+                    <div class="violation-card ${statusClass}">
+                        <div class="violation-header">
+                            <img src="${v.avatar}" alt="${v.name}" class="violation-avatar">
+                            <div class="violation-info">
+                                <h3>${v.name}</h3>
+                                <p class="violation-id">ID: ${v.id}</p>
+                            </div>
+                        </div>
+                        <div class="violation-status">
+                            <div class="violation-bar">
+                                <div class="violation-progress" style="width: ${percentage}%; background: ${
+                                    v.violations === 3 ? '#ED4245' : 
+                                    v.violations === 2 ? '#FEE75C' : '#57F287'
+                                }"></div>
+                            </div>
+                            <p class="violation-count">
+                                Violations: <strong>${v.violations}/3</strong>
+                                ${v.violations === 3 ? ' 🚨 AUTO-BANNED' : ''}
+                            </p>
+                        </div>
+                        ${v.violations < 3 ? `
+                            <div class="violation-actions">
+                                <button class="btn btn-warning btn-sm" onclick="clearViolations('${v.id}', '${v.name}')">
+                                    🔄 Clear Violations
+                                </button>
+                            </div>
+                        ` : ''}
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function clearViolations(userId, userName) {
+            if (!confirm(`Clear all violations for "${userName}"?`)) {
+                return;
+            }
+
+            fetch('/api/violations/clear', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({ user_id: userId })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    showNotification(data.message, 'success');
+                    loadViolations();
+                } else {
+                    showNotification('Error: ' + data.message, 'error');
+                }
+            })
+            .catch(error => {
+                showNotification('Failed to clear violations', 'error');
+            });
+        }
+
+        function showNotification(message, type) {
+            const notification = document.getElementById('notification');
+            notification.textContent = message;
+            notification.className = `notification ${type}`;
+            notification.style.display = 'block';
+            
+            setTimeout(() => {
+                notification.style.display = 'none';
+            }, 3000);
+        }
+    </script>
+</body>
+</html>

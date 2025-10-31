@@ -1,0 +1,303 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Send Message - Discord Bot Dashboard</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+    <div class="dashboard-wrapper">
+        <aside class="sidebar">
+            <div class="sidebar-header">
+                <h2>🤖 Bot Panel</h2>
+            </div>
+            <nav class="sidebar-nav">
+                <a href="{{ url_for('index') }}" class="nav-item">
+                    <span class="icon">📊</span>
+                    <span>Dashboard</span>
+                </a>
+                <a href="{{ url_for('send_message_page') }}" class="nav-item active">
+                    <span class="icon">💬</span>
+                    <span>Send Message</span>
+                </a>
+                <a href="{{ url_for('bot_management_page') }}" class="nav-item">
+                    <span class="icon">🤖</span>
+                    <span>Bot Management</span>
+                </a>
+                <a href="{{ url_for('violations_page') }}" class="nav-item">
+                    <span class="icon">⚠️</span>
+                    <span>Violations</span>
+                </a>
+                <a href="{{ url_for('config_page') }}" class="nav-item">
+                    <span class="icon">⚙️</span>
+                    <span>Configuration</span>
+                </a>
+                <a href="{{ url_for('members_page') }}" class="nav-item">
+                    <span class="icon">👥</span>
+                    <span>Members</span>
+                </a>
+                <a href="{{ url_for('logs_page') }}" class="nav-item">
+                    <span class="icon">📝</span>
+                    <span>Logs</span>
+                </a>
+                <a href="{{ url_for('logout') }}" class="nav-item logout">
+                    <span class="icon">🚪</span>
+                    <span>Logout</span>
+                </a>
+            </nav>
+        </aside>
+
+        <main class="main-content">
+            <header class="top-bar">
+                <h1>💬 Send Message to Discord</h1>
+                <select id="guild-select" class="form-control" style="margin-left:auto;max-width:280px;">
+                    <option>Loading guilds...</option>
+                </select>
+            </header>
+
+            <div id="notification" class="notification" style="display: none;"></div>
+
+            <!-- Simple Message -->
+            <div class="section">
+                <h2>Send Simple Message</h2>
+                <div class="message-form">
+                    <div class="form-group">
+                        <label><input type="checkbox" id="broadcast-simple"> Broadcast to all servers</label>
+                    </div>
+                    <div class="form-group" id="broadcast-target-row" style="display:none;">
+                        <label for="broadcast-channel-name">Preferred Channel Name (optional):</label>
+                        <input type="text" id="broadcast-channel-name" class="form-control" placeholder="e.g. announcements">
+                    </div>
+                    <div class="form-group">
+                        <label for="channel-select">Select Channel:</label>
+                        <select id="channel-select" class="form-control">
+                            <option value="">Loading channels...</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="message-text">Message:</label>
+                        <textarea id="message-text" rows="5" class="form-control" placeholder="Type your message here..."></textarea>
+                    </div>
+                    <button class="btn btn-primary" onclick="sendMessage()">📤 Send Message</button>
+                </div>
+            </div>
+
+            <!-- Embed Message -->
+            <div class="section">
+                <h2>Send Embed Message</h2>
+                <div class="message-form">
+                    <div class="form-group">
+                        <label><input type="checkbox" id="broadcast-embed"> Broadcast to all servers</label>
+                    </div>
+                    <div class="form-group" id="broadcast-embed-target-row" style="display:none;">
+                        <label for="broadcast-embed-channel-name">Preferred Channel Name (optional):</label>
+                        <input type="text" id="broadcast-embed-channel-name" class="form-control" placeholder="e.g. announcements">
+                    </div>
+                    <div class="form-group">
+                        <label for="embed-channel-select">Select Channel:</label>
+                        <select id="embed-channel-select" class="form-control">
+                            <option value="">Loading channels...</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="embed-title">Embed Title:</label>
+                        <input type="text" id="embed-title" class="form-control" placeholder="Your embed title">
+                    </div>
+                    <div class="form-group">
+                        <label for="embed-description">Embed Description:</label>
+                        <textarea id="embed-description" rows="4" class="form-control" placeholder="Your embed description..."></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label for="embed-color">Embed Color:</label>
+                        <input type="color" id="embed-color" class="form-control" value="#5865F2">
+                    </div>
+                    <button class="btn btn-primary" onclick="sendEmbed()">📤 Send Embed</button>
+                </div>
+            </div>
+
+            <!-- Preview -->
+            <div class="section">
+                <h2>Preview</h2>
+                <div class="embed-preview" id="embed-preview">
+                    <div class="embed-container" style="border-left: 4px solid #5865F2;">
+                        <div class="embed-title" id="preview-title">Your Title Here</div>
+                        <div class="embed-description" id="preview-description">Your description will appear here...</div>
+                        <div class="embed-footer">Sent via Dashboard</div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script>
+        // Populate guild selector
+        (function initGuildSelect(){
+            const sel = document.getElementById('guild-select');
+            fetch('/api/guilds').then(r => r.json()).then(gs => {
+                const saved = localStorage.getItem('selectedGuildId');
+                sel.innerHTML = '<option value="">Select server (optional)</option>';
+                gs.forEach(g => {
+                    const opt = document.createElement('option');
+                    opt.value = g.id;
+                    opt.textContent = `${g.name} (${g.member_count})`;
+                    if (saved && saved === g.id) opt.selected = true;
+                    sel.appendChild(opt);
+                });
+                sel.addEventListener('change', () => {
+                    const val = sel.value || '';
+                    if (val) localStorage.setItem('selectedGuildId', val); else localStorage.removeItem('selectedGuildId');
+                    loadChannels();
+                });
+            }).catch(() => {});
+        })();
+
+        // Load channels on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            initGuildSelect();
+            loadChannels();
+            
+            // Update preview in real-time
+            document.getElementById('embed-title').addEventListener('input', updatePreview);
+            document.getElementById('embed-description').addEventListener('input', updatePreview);
+            document.getElementById('embed-color').addEventListener('input', updatePreview);
+            document.getElementById('broadcast-simple').addEventListener('change', function() {
+                document.getElementById('broadcast-target-row').style.display = this.checked ? 'block' : 'none';
+            });
+            document.getElementById('broadcast-embed').addEventListener('change', function() {
+                document.getElementById('broadcast-embed-target-row').style.display = this.checked ? 'block' : 'none';
+            });
+        });
+
+        function loadChannels() {
+            const gid = localStorage.getItem('selectedGuildId');
+            const url = gid ? `/api/channels?guild_id=${gid}` : '/api/channels';
+            fetch(url)
+                .then(response => response.json())
+                .then(data => {
+                    const select1 = document.getElementById('channel-select');
+                    const select2 = document.getElementById('embed-channel-select');
+                    
+                    select1.innerHTML = '<option value="">-- Select a channel --</option>';
+                    select2.innerHTML = '<option value="">-- Select a channel --</option>';
+                    
+                    data.forEach(channel => {
+                        const option1 = document.createElement('option');
+                        option1.value = channel.id;
+                        option1.textContent = `#${channel.name} (${channel.category})`;
+                        select1.appendChild(option1);
+                        
+                        const option2 = option1.cloneNode(true);
+                        select2.appendChild(option2);
+                    });
+                })
+                .catch(error => {
+                    console.error('Error loading channels:', error);
+                    showNotification('Failed to load channels', 'error');
+                });
+        }
+
+        function sendMessage() {
+            const channelId = document.getElementById('channel-select').value;
+            const message = document.getElementById('message-text').value;
+            const broadcast = document.getElementById('broadcast-simple').checked;
+            const channelName = document.getElementById('broadcast-channel-name').value;
+            
+            if (!broadcast && !channelId) {
+                showNotification('Please select a channel!', 'error');
+                return;
+            }
+            
+            if (!message.trim()) {
+                showNotification('Please enter a message!', 'error');
+                return;
+            }
+            
+            fetch('/api/send_message', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({ broadcast: broadcast, channel_id: channelId, channel_name: channelName, message: message })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    showNotification('Message sent successfully! ✅', 'success');
+                    document.getElementById('message-text').value = '';
+                } else {
+                    showNotification('Error: ' + data.message, 'error');
+                }
+            })
+            .catch(error => {
+                showNotification('Failed to send message', 'error');
+            });
+        }
+
+        function sendEmbed() {
+            const channelId = document.getElementById('embed-channel-select').value;
+            const title = document.getElementById('embed-title').value;
+            const description = document.getElementById('embed-description').value;
+            const color = document.getElementById('embed-color').value;
+            const broadcast = document.getElementById('broadcast-embed').checked;
+            const channelName = document.getElementById('broadcast-embed-channel-name').value;
+            
+            if (!broadcast && !channelId) {
+                showNotification('Please select a channel!', 'error');
+                return;
+            }
+            
+            if (!title.trim() || !description.trim()) {
+                showNotification('Please fill in title and description!', 'error');
+                return;
+            }
+            
+            fetch('/api/send_embed', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({ 
+                    broadcast: broadcast,
+                    channel_id: channelId, 
+                    channel_name: channelName,
+                    title: title, 
+                    description: description,
+                    color: color
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    showNotification('Embed sent successfully! ✅', 'success');
+                    document.getElementById('embed-title').value = '';
+                    document.getElementById('embed-description').value = '';
+                    updatePreview();
+                } else {
+                    showNotification('Error: ' + data.message, 'error');
+                }
+            })
+            .catch(error => {
+                showNotification('Failed to send embed', 'error');
+            });
+        }
+
+        function updatePreview() {
+            const title = document.getElementById('embed-title').value || 'Your Title Here';
+            const description = document.getElementById('embed-description').value || 'Your description will appear here...';
+            const color = document.getElementById('embed-color').value;
+            
+            document.getElementById('preview-title').textContent = title;
+            document.getElementById('preview-description').textContent = description;
+            document.querySelector('.embed-container').style.borderLeftColor = color;
+        }
+
+        function showNotification(message, type) {
+            const notification = document.getElementById('notification');
+            notification.textContent = message;
+            notification.className = `notification ${type}`;
+            notification.style.display = 'block';
+            
+            setTimeout(() => {
+                notification.style.display = 'none';
+            }, 3000);
+        }
+    </script>
+</body>
+</html>

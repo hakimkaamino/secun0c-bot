@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Logs - Discord Bot Dashboard</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+    <div class="dashboard-wrapper">
+        <aside class="sidebar">
+            <div class="sidebar-header">
+                <h2>🤖 Bot Panel</h2>
+            </div>
+            <nav class="sidebar-nav">
+                <a href="{{ url_for('index') }}" class="nav-item">
+                    <span class="icon">📊</span>
+                    <span>Dashboard</span>
+                </a>
+                <a href="{{ url_for('send_message_page') }}" class="nav-item">
+                    <span class="icon">💬</span>
+                    <span>Send Message</span>
+                </a>
+                <a href="{{ url_for('bot_management_page') }}" class="nav-item">
+                    <span class="icon">🤖</span>
+                    <span>Bot Management</span>
+                </a>
+                <a href="{{ url_for('violations_page') }}" class="nav-item">
+                    <span class="icon">⚠️</span>
+                    <span>Violations</span>
+                </a>
+                <a href="{{ url_for('config_page') }}" class="nav-item">
+                    <span class="icon">⚙️</span>
+                    <span>Configuration</span>
+                </a>
+                <a href="{{ url_for('members_page') }}" class="nav-item">
+                    <span class="icon">👥</span>
+                    <span>Members</span>
+                </a>
+                <a href="{{ url_for('logs_page') }}" class="nav-item active">
+                    <span class="icon">📝</span>
+                    <span>Logs</span>
+                </a>
+                <a href="{{ url_for('logout') }}" class="nav-item logout">
+                    <span class="icon">🚪</span>
+                    <span>Logout</span>
+                </a>
+            </nav>
+        </aside>
+
+        <main class="main-content">
+            <header class="top-bar">
+                <h1>Bot Logs</h1>
+                <button class="btn btn-secondary" onclick="refreshLogs()">🔄 Refresh</button>
+            </header>
+
+            <div class="section">
+                <div class="filter-row">
+                    <select id="log-type-filter" onchange="filterLogs()">
+                        <option value="all">All Events</option>
+                        <option value="join">Member Joins</option>
+                        <option value="leave">Member Leaves</option>
+                        <option value="verify">Verifications</option>
+                        <option value="raid">Raid Events</option>
+                        <option value="spam">Spam Detections</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="section">
+                <div class="logs-container" id="logs-container">
+                    <div class="log-entry">
+                        <span class="log-time">Loading logs...</span>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script src="{{ url_for('static', filename='js/logs.js') }}"></script>
+</body>
+</html>

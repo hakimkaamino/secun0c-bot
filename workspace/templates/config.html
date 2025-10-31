@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Configuration - Discord Bot Dashboard</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+    <div class="dashboard-wrapper">
+        <aside class="sidebar">
+            <div class="sidebar-header">
+                <h2>🤖 Bot Panel</h2>
+            </div>
+            <nav class="sidebar-nav">
+                <a href="{{ url_for('index') }}" class="nav-item">
+                    <span class="icon">📊</span>
+                    <span>Dashboard</span>
+                </a>
+                <a href="{{ url_for('send_message_page') }}" class="nav-item">
+                    <span class="icon">💬</span>
+                    <span>Send Message</span>
+                </a>
+                <a href="{{ url_for('bot_management_page') }}" class="nav-item">
+                    <span class="icon">🤖</span>
+                    <span>Bot Management</span>
+                </a>
+                <a href="{{ url_for('violations_page') }}" class="nav-item">
+                    <span class="icon">⚠️</span>
+                    <span>Violations</span>
+                </a>
+                <a href="{{ url_for('config_page') }}" class="nav-item active">
+                    <span class="icon">⚙️</span>
+                    <span>Configuration</span>
+                </a>
+                <a href="{{ url_for('members_page') }}" class="nav-item">
+                    <span class="icon">👥</span>
+                    <span>Members</span>
+                </a>
+                <a href="{{ url_for('logs_page') }}" class="nav-item">
+                    <span class="icon">📝</span>
+                    <span>Logs</span>
+                </a>
+                <a href="{{ url_for('logout') }}" class="nav-item logout">
+                    <span class="icon">🚪</span>
+                    <span>Logout</span>
+                </a>
+            </nav>
+        </aside>
+
+        <main class="main-content">
+            <header class="top-bar">
+                <h1>Bot Configuration</h1>
+                <button class="btn btn-primary" onclick="saveConfig()">💾 Save Changes</button>
+            </header>
+
+            <div id="save-notification" class="notification" style="display: none;"></div>
+
+            <div class="section">
+                <h2>🛡️ Security Settings</h2>
+                <div class="config-grid">
+                    <div class="config-item">
+                        <label for="raid-threshold">Raid Threshold (joins):</label>
+                        <input type="number" id="raid-threshold" min="1" max="50">
+                        <small>Number of joins to trigger raid mode</small>
+                    </div>
+                    <div class="config-item">
+                        <label for="raid-window">Raid Window (seconds):</label>
+                        <input type="number" id="raid-window" min="10" max="300">
+                        <small>Time window for raid detection</small>
+                    </div>
+                    <div class="config-item">
+                        <label for="spam-threshold">Spam Threshold:</label>
+                        <input type="number" id="spam-threshold" min="1" max="20">
+                        <small>Messages per minute to trigger spam filter</small>
+                    </div>
+                    <div class="config-item">
+                        <label for="mass-ping-threshold">Mass Ping Threshold:</label>
+                        <input type="number" id="mass-ping-threshold" min="1" max="20">
+                        <small>Number of pings to trigger mass ping filter</small>
+                    </div>
+                </div>
+            </div>
+
+            <div class="section">
+                <h2>✅ Verification Settings</h2>
+                <div class="config-grid">
+                    <div class="config-item full-width">
+                        <label for="use-math-captcha">
+                            <input type="checkbox" id="use-math-captcha">
+                            Enable Math CAPTCHA
+                        </label>
+                        <small>Require new members to solve a math problem</small>
+                    </div>
+                    <div class="config-item full-width">
+                        <label for="custom-dm-message">Verification DM Message:</label>
+                        <textarea id="custom-dm-message" rows="4"></textarea>
+                        <small>Message sent to new members in DM</small>
+                    </div>
+                    <div class="config-item full-width">
+                        <label for="custom-welcome-message">Welcome Message:</label>
+                        <textarea id="custom-welcome-message" rows="3"></textarea>
+                        <small>Message sent in welcome channel (use {user} for mention)</small>
+                    </div>
+                </div>
+            </div>
+
+            <div class="section">
+                <h2>🚫 Bad Words Filter</h2>
+                <div class="config-item full-width">
+                    <label for="bad-words">Filtered Words (comma-separated):</label>
+                    <textarea id="bad-words" rows="3" placeholder="word1, word2, word3"></textarea>
+                    <small>Words that will be automatically filtered from messages</small>
+                </div>
+            </div>
+
+            <div class="section">
+                <h2>🔒 Lockdown Settings</h2>
+                <div class="config-grid">
+                    <div class="config-item">
+                        <label for="lockdown-default-minutes">Default Lockdown Duration (minutes):</label>
+                        <input type="number" id="lockdown-default-minutes" min="1" max="1440">
+                        <small>Default duration when no time specified</small>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script src="{{ url_for('static', filename='js/config.js') }}"></script>
+</body>
+</html>

@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Discord Bot Dashboard</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+    <div class="dashboard-wrapper">
+        <aside class="sidebar">
+            <div class="sidebar-header">
+                <h2>🤖 Bot Panel</h2>
+            </div>
+            <nav class="sidebar-nav">
+                <a href="{{ url_for('index') }}" class="nav-item active">
+                    <span class="icon">📊</span>
+                    <span>Dashboard</span>
+                </a>
+                <a href="{{ url_for('send_message_page') }}" class="nav-item">
+                    <span class="icon">💬</span>
+                    <span>Send Message</span>
+                </a>
+                <a href="{{ url_for('bot_management_page') }}" class="nav-item">
+                    <span class="icon">🤖</span>
+                    <span>Bot Management</span>
+                </a>
+                <a href="{{ url_for('violations_page') }}" class="nav-item">
+                    <span class="icon">⚠️</span>
+                    <span>Violations</span>
+                </a>
+                <a href="{{ url_for('config_page') }}" class="nav-item">
+                    <span class="icon">⚙️</span>
+                    <span>Configuration</span>
+                </a>
+                <a href="{{ url_for('members_page') }}" class="nav-item">
+                    <span class="icon">👥</span>
+                    <span>Members</span>
+                </a>
+                <a href="{{ url_for('logs_page') }}" class="nav-item">
+                    <span class="icon">📝</span>
+                    <span>Logs</span>
+                </a>
+                <a href="{{ url_for('logout') }}" class="nav-item logout">
+                    <span class="icon">🚪</span>
+                    <span>Logout</span>
+                </a>
+            </nav>
+        </aside>
+
+        <main class="main-content">
+            <header class="top-bar">
+                <h1>Dashboard Overview</h1>
+                <div class="user-info">
+                    <select id="guild-select" class="form-control" style="margin-right:10px;">
+                        <option>Loading guilds...</option>
+                    </select>
+                    <span class="status-badge online" id="bot-status">Online</span>
+                    <span id="bot-name">Admin</span>
+                </div>
+            </header>
+
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-icon">👥</div>
+                    <div class="stat-info">
+                        <h3 id="total-members">0</h3>
+                        <p>Total Members</p>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon">✅</div>
+                    <div class="stat-info">
+                        <h3 id="verified-members">0</h3>
+                        <p>Verified Members</p>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon">⏳</div>
+                    <div class="stat-info">
+                        <h3 id="pending-members">0</h3>
+                        <p>Pending Verification</p>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon">🖥️</div>
+                    <div class="stat-info">
+                        <h3 id="total-servers">0</h3>
+                        <p>Servers</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="section">
+                <h2>Quick Actions</h2>
+                <div class="actions-grid">
+                    <button class="action-btn" onclick="toggleRaidMode('on')">
+                        <span class="icon">🛡️</span>
+                        <span>Enable Raid Mode</span>
+                    </button>
+                    <button class="action-btn" onclick="toggleRaidMode('off')">
+                        <span class="icon">🔓</span>
+                        <span>Disable Raid Mode</span>
+                    </button>
+                    <button class="action-btn" onclick="showLockdownModal()">
+                        <span class="icon">🔒</span>
+                        <span>Server Lockdown</span>
+                    </button>
+                    <button class="action-btn" onclick="location.href='/send_message'">
+                        <span class="icon">💬</span>
+                        <span>Send Message</span>
+                    </button>
+                    <button class="action-btn" onclick="doBackup()">
+                        <span class="icon">📦</span>
+                        <span>Backup</span>
+                    </button>
+                    <button class="action-btn" onclick="doRestore()">
+                        <span class="icon">🛠️</span>
+                        <span>Restore</span>
+                    </button>
+                </div>
+            </div>
+
+            <div class="section">
+                <h2>System Information</h2>
+                <div class="info-card">
+                    <div class="info-row">
+                        <span class="label">Bot Status:</span>
+                        <span class="value" id="status-text">Online</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="label">Uptime:</span>
+                        <span class="value" id="uptime">0:00:00</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="label">Last Updated:</span>
+                        <span class="value" id="last-updated">Just now</span>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <div id="lockdownModal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeLockdownModal()">&times;</span>
+            <h2>Server Lockdown</h2>
+            <p>Lock all channels for a specified duration.</p>
+            <div class="form-group">
+                <label for="lockdown-minutes">Duration (minutes):</label>
+                <input type="number" id="lockdown-minutes" value="10" min="1" max="1440">
+            </div>
+            <button class="btn btn-primary" onclick="triggerLockdown()">Activate Lockdown</button>
+        </div>
+    </div>
+
+    <script src="{{ url_for('static', filename='js/dashboard.js') }}"></script>
+</body>
+</html>
